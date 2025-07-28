@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Calendar, User, Flag } from 'lucide-react'
-// Remove API imports since we're using dummy data
+// Remove API imports - the Dashboard component handles API calls now
 // import { createTask, updateTask } from '../api/tasks'
 
 const TaskModal = ({ task, onClose, onSave }) => {
@@ -42,12 +42,8 @@ const TaskModal = ({ task, onClose, onSave }) => {
     setError('')
 
     try {
-      // Simulate API call delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // No actual API calls needed - the parent component handles the task data
-      // Just call onSave to notify the parent component
-      onSave()
+      // Pass the form data to the parent component
+      await onSave(formData)
     } catch (err) {
       setError(err.message || 'Failed to save task')
     } finally {

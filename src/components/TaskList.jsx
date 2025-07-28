@@ -172,7 +172,7 @@ const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
   )
 }
 
-const TaskList = ({ tasks, onTaskUpdate, onEditTask }) => {
+const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
   const [loading, setLoading] = useState(false)
   const [activeTask, setActiveTask] = useState(null)
   const [taskOrder, setTaskOrder] = useState(tasks)
@@ -208,8 +208,8 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask }) => {
         prevTasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
       )
 
-      await updateTask(taskId, { status: newStatus })
-      onTaskUpdate()
+      // Call the parent's update handler instead of direct API call
+      await onTaskUpdate(taskId, { status: newStatus })
     } catch (error) {
       console.error('Failed to update task:', error)
       // Revert on error
@@ -223,8 +223,8 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask }) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       setLoading(true)
       try {
-        await deleteTask(taskId)
-        onTaskUpdate()
+        // Use the parent's delete handler
+        await onDeleteTask(taskId)
       } catch (error) {
         console.error('Failed to delete task:', error)
       } finally {
@@ -304,17 +304,15 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask }) => {
 
     if (!activeTask) return
 
-    // Handle dropping on column
-    if (typeof overTaskId === 'string' && overTaskId.startsWith('droppable-')) {
-      const newStatus = overTaskId.replace('droppable-', '')
+      // Handle dropping on column
+      if (typeof overTaskId === 'string' && overTaskId.startsWith('droppable-')) {
+        const newStatus = overTaskId.replace('droppable-', '')
 
-      if (activeTask.status !== newStatus) {
-        await handleStatusChange(activeTaskId, newStatus)
-      }
-      return
-    }
-
-    // Handle reordering within same column or moving between columns
+        if (activeTask.status !== newStatus) {
+          await handleStatusChange(activeTaskId, newStatus)
+        }
+        return
+      }    // Handle reordering within same column or moving between columns
     const overTask = taskOrder.find((t) => t.id === overTaskId)
 
     if (overTask) {

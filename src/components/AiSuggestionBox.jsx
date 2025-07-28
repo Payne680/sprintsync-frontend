@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Sparkles, RefreshCw, Lightbulb, TrendingUp } from 'lucide-react'
-// import { getAiSuggestions } from '../api/tasks'
+import { getAiSuggestions } from '../api/tasks'
 
-const AiSuggestionBox = () => {
+const AiSuggestionBox = ({ onAddTask }) => {
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -101,6 +101,37 @@ const AiSuggestionBox = () => {
       return `Implement security measures for ${title}. Include authentication, authorization, input validation, data encryption, and security audit procedures.`
     } else {
       return `Analyze requirements and implement ${title}. Break down into smaller tasks, research best practices, create technical specifications, develop solution, and ensure quality through testing and code review.`
+    }
+  }
+
+  const handleAddTask = async (suggestion) => {
+    if (!onAddTask) {
+      console.warn('onAddTask prop not provided to AiSuggestionBox')
+      return
+    }
+
+    try {
+      // Convert AI suggestion to task format compatible with backend
+      const taskData = {
+        title: suggestion.title,
+        description: suggestion.description,
+        status: 'todo',
+        priority: suggestion.priority || 'medium',
+        assignee: '', // User can edit this later
+        dueDate: '', // User can set this later
+        totalMinutes: (suggestion.estimatedHours || 4) * 60 // Convert hours to minutes for backend
+      }
+
+      await onAddTask(taskData)
+      
+      // Optionally remove the suggestion from the list after adding
+      if (suggestion.id) {
+        setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
+      }
+      
+    } catch (error) {
+      console.error('Failed to add task from AI suggestion:', error)
+      setError('Failed to add task. Please try again.')
     }
   }
 
@@ -239,7 +270,10 @@ const AiSuggestionBox = () => {
                       <span className="text-xs text-gray-500">
                         Est. {suggestion.estimatedHours}h
                       </span>
-                      <button className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors">
+                      <button 
+                        onClick={() => handleAddTask(suggestion)}
+                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors"
+                      >
                         Add to Tasks
                       </button>
                     </div>

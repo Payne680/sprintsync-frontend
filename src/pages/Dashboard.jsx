@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { logout } from '../api/auth'
-// Remove API imports since we're using dummy data
-// import { getTasks } from '../api/tasks'
+import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks'
 import TaskList from '../components/TaskList'
 import TaskModal from '../components/TaskModal'
 import AiSuggestionBox from '../components/AiSuggestionBox'
@@ -22,73 +21,29 @@ import {
 const Dashboard = () => {
   const { user, setUser } = useAuth()
 
-  // Dummy tasks data
-  const dummyTasks = [
-    {
-      id: 1,
-      title: 'Setup authentication system',
-      description: 'Implement login and signup functionality',
-      status: 'done',
-      priority: 'high',
-      assignee: 'John Doe',
-      dueDate: '2025-07-30',
-      createdAt: '2025-07-25',
-    },
-    {
-      id: 2,
-      title: 'Create dashboard UI',
-      description: 'Design and implement the main dashboard interface',
-      status: 'in-progress',
-      priority: 'medium',
-      assignee: 'Jane Smith',
-      dueDate: '2025-08-05',
-      createdAt: '2025-07-26',
-    },
-    {
-      id: 3,
-      title: 'Add task management',
-      description: 'Implement CRUD operations for tasks',
-      status: 'todo',
-      priority: 'high',
-      assignee: 'Bob Johnson',
-      dueDate: '2025-08-10',
-      createdAt: '2025-07-27',
-    },
-    {
-      id: 4,
-      title: 'Setup API integration',
-      description: 'Connect frontend with backend APIs',
-      status: 'todo',
-      priority: 'low',
-      assignee: 'Alice Brown',
-      dueDate: '2025-08-15',
-      createdAt: '2025-07-28',
-    },
-  ]
-
-  const [tasks, setTasks] = useState(dummyTasks)
-  const [loading, setLoading] = useState(false) // No loading needed for dummy data
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
-  // No need for useEffect since we're using dummy data
-  // useEffect(() => {
-  //   loadTasks()
-  // }, [])
+  useEffect(() => {
+    loadTasks()
+  }, [])
 
-  // No need for loadTasks function since we're using dummy data
-  // const loadTasks = async () => {
-  //   try {
-  //     const tasksData = await getTasks()
-  //     setTasks(tasksData)
-  //   } catch (error) {
-  //     console.error('Failed to load tasks:', error)
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
+  const loadTasks = async () => {
+    try {
+      setLoading(true)
+      const tasksData = await getTasks()
+      setTasks(tasksData)
+    } catch (error) {
+      console.error('Failed to load tasks:', error)
+      // Error handling - could show a toast notification here
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -105,11 +60,62 @@ const Dashboard = () => {
     setShowTaskModal(true)
   }
 
-  const handleTaskUpdate = () => {
-    // For demo purposes, just close the modal
-    // In a real app, this would update the tasks state
-    setShowTaskModal(false)
-    setEditingTask(null)
+  const handleTaskSave = async (taskData) => {
+    try {
+      if (editingTask) {
+        // Update existing task
+        await updateTask(editingTask.id, taskData)
+      } else {
+        // Create new task
+        await createTask(taskData)
+      }
+
+      // Reload tasks to get updated data
+      await loadTasks()
+      setShowTaskModal(false)
+      setEditingTask(null)
+    } catch (error) {
+      console.error('Failed to save task:', error)
+      // Re-throw error so TaskModal can show it
+      throw error
+    }
+  }
+
+  const handleTaskDelete = async (taskId) => {
+    try {
+      await deleteTask(taskId)
+      // Reload tasks to reflect deletion
+      await loadTasks()
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+      // Error handling - could show error message to user
+    }
+  }
+
+  const handleTaskUpdate = async (taskId, updates) => {
+    try {
+      if (taskId && updates) {
+        // Called from TaskList with specific updates
+        await updateTask(taskId, updates)
+        await loadTasks()
+      } else {
+        // Called as simple refresh
+        await loadTasks()
+      }
+    } catch (error) {
+      console.error('Failed to update task:', error)
+    }
+  }
+
+  const handleAddTaskFromAI = async (taskData) => {
+    try {
+      await createTask(taskData)
+      // Reload tasks to show the new task
+      await loadTasks()
+    } catch (error) {
+      console.error('Failed to add task from AI suggestion:', error)
+      throw error
+    }
   }
 
   const filteredTasks = tasks.filter((task) => {
@@ -228,7 +234,7 @@ const Dashboard = () => {
               </div>
 
               {/* AI Suggestions */}
-              <AiSuggestionBox />
+              <AiSuggestionBox onAddTask={handleAddTaskFromAI} />
             </div>
           </div>
         </aside>
@@ -281,7 +287,12 @@ const Dashboard = () => {
             </div>
 
             {/* Task List */}
-            <TaskList tasks={filteredTasks} onTaskUpdate={() => {}} onEditTask={handleEditTask} />
+            <TaskList
+              tasks={filteredTasks}
+              onTaskUpdate={handleTaskUpdate}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleTaskDelete}
+            />
           </div>
         </main>
       </div>
@@ -291,7 +302,7 @@ const Dashboard = () => {
         <TaskModal
           task={editingTask}
           onClose={() => setShowTaskModal(false)}
-          onSave={handleTaskUpdate}
+          onSave={handleTaskSave}
         />
       )}
     </div>
