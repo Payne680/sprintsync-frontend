@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Zap, AlertCircle, CheckCircle } from 'lucide-react'
-// import { signup } from "../api/auth";
-// import { useAuth } from "../hooks/useAuth";
+import { signup } from '../api/auth'
+import { useAuth } from '../hooks/useAuth.jsx'
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +15,7 @@ const Signup = () => {
   const [error, setError] = useState('')
 
   const navigate = useNavigate()
-  // const { setUser } = useAuth()
+  const { setUser } = useAuth()
 
   const handleChange = (e) => {
     setFormData({

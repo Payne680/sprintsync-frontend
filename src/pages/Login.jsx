@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Zap, AlertCircle } from 'lucide-react'
-// import { login } from "../api/auth";
-// import { useAuth } from "../hooks/useAuth";
+import { login } from '../api/auth'
+import { useAuth } from '../hooks/useAuth.jsx'
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +14,7 @@ const Login = () => {
   const [error, setError] = useState('')
 
   const navigate = useNavigate()
-  // const { setUser } = useAuth()
+  const { setUser } = useAuth()
 
   const handleChange = (e) => {
     setFormData({
@@ -25,32 +25,15 @@ const Login = () => {
     if (error) setError('')
   }
 
-  const fillDemoCredentials = () => {
-    setFormData({
-      email: 'admin@example.com',
-      password: 'password123',
-    })
-    setError('')
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // For demo purposes, accept any credentials
-      if (formData.email && formData.password) {
-        // const { user } = await login(formData.email, formData.password)
-        // setUser(user)
-        alert('Login successful! (Demo mode)')
-        navigate('/dashboard')
-      } else {
-        throw new Error('Please enter both email and password')
-      }
+      const { user } = await login(formData.email, formData.password)
+      setUser(user)
+      navigate('/dashboard')
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.')
     } finally {
@@ -75,31 +58,6 @@ const Login = () => {
 
         {/* Form */}
         <div className="card animate-slide-up">
-          {/* Demo Credentials Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 text-blue-800 mb-2">
-              <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">!</span>
-              </div>
-              <span className="text-sm font-medium">Demo Credentials</span>
-            </div>
-            <div className="text-sm text-blue-700">
-              <p>
-                <strong>Email:</strong> admin@example.com
-              </p>
-              <p>
-                <strong>Password:</strong> password123
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className="mt-3 w-full bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 px-4 rounded-md text-sm font-medium transition-colors"
-            >
-              Fill Demo Credentials
-            </button>
-          </div>
-
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
@@ -202,11 +160,6 @@ const Login = () => {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Demo credentials */}
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Demo: admin@example.com / password123</p>
         </div>
       </div>
     </div>
