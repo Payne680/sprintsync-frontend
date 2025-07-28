@@ -10,13 +10,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        console.log('useAuth: initializing auth...')
         initializeAuth()
         const currentUser = await getCurrentUser()
+        console.log('useAuth: current user:', currentUser)
         setUser(currentUser)
       } catch (error) {
         console.error('Failed to load user:', error)
         setUser(null)
       } finally {
+        console.log('useAuth: loading complete')
         setLoading(false)
       }
     }
