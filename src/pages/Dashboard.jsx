@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { logout } from '../api/auth'
-import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks'
+import { getTasks, createTask, updateTask, deleteTask, updateTaskStatus } from '../api/tasks'
 import TaskList from '../components/TaskList'
 import TaskModal from '../components/TaskModal'
 import AiSuggestionBox from '../components/AiSuggestionBox'
@@ -35,7 +35,9 @@ const Dashboard = () => {
   const loadTasks = async () => {
     try {
       setLoading(true)
+      console.log('Dashboard: Loading tasks from backend...')
       const tasksData = await getTasks()
+      console.log('Dashboard: Loaded tasks:', tasksData)
       setTasks(tasksData)
     } catch (error) {
       console.error('Failed to load tasks:', error)
@@ -95,15 +97,24 @@ const Dashboard = () => {
   const handleTaskUpdate = async (taskId, updates) => {
     try {
       if (taskId && updates) {
-        // Called from TaskList with specific updates
-        await updateTask(taskId, updates)
-        await loadTasks()
+        // Called from TaskList with specific updates (like drag and drop)
+        console.log('Dashboard: Updating task:', taskId, 'with updates:', updates)
+        const updatedTask = await updateTask(taskId, updates)
+        console.log('Dashboard: Task update successful, received:', updatedTask)
+
+        // Update the task in local state immediately instead of reloading all tasks
+        setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? updatedTask : task)))
+
+        console.log('Dashboard: Local state updated with new task data')
       } else {
         // Called as simple refresh
+        console.log('Dashboard: Refreshing task list...')
         await loadTasks()
       }
     } catch (error) {
-      console.error('Failed to update task:', error)
+      console.error('Dashboard: Failed to update task:', error)
+      // Show user-friendly error message
+      alert('Failed to update task. Please try again.')
     }
   }
 
@@ -115,6 +126,24 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to add task from AI suggestion:', error)
       throw error
+    }
+  }
+
+  // Real-time drag-and-drop status change handler
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    // Optimistically update UI
+    setTasks((prevTasks) =>
+      prevTasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
+    )
+    try {
+      // Persist to backend
+      const updatedTask = await updateTaskStatus(taskId, newStatus)
+      // Patch with backend response (in case other fields changed)
+      setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? updatedTask : task)))
+    } catch (error) {
+      // Optionally revert UI and show error
+      await loadTasks()
+      alert('Failed to update task status. Please try again.')
     }
   }
 
@@ -290,6 +319,7 @@ const Dashboard = () => {
             <TaskList
               tasks={filteredTasks}
               onTaskUpdate={handleTaskUpdate}
+              onTaskStatusChange={handleTaskStatusChange}
               onEditTask={handleEditTask}
               onDeleteTask={handleTaskDelete}
             />

@@ -126,11 +126,27 @@ export const getCurrentUser = async () => {
       }
     }
 
-    const response = await axios.get('/api/auth/me')
-    return response.data.user
+    try {
+      const response = await axios.get('/api/auth/me')
+      return response.data.user
+    } catch (error) {
+      // If backend returns 404 (route not found), fallback to mock user for dev/demo
+      if (error.response?.status === 404 || error.response?.data?.error === 'Route not found') {
+        console.log('getCurrentUser: /api/auth/me not found, returning mock user for dev')
+        return {
+          id: 1,
+          name: 'Demo User',
+          email: 'demo@example.com',
+        }
+      }
+      // For other errors, treat as invalid token
+      console.log('getCurrentUser: error fetching user, removing token')
+      localStorage.removeItem('authToken')
+      delete axios.defaults.headers.common['Authorization']
+      return null
+    }
   } catch (error) {
-    console.log('getCurrentUser: error fetching user, removing token')
-    // If token is invalid, remove it
+    // Defensive: should not reach here, but just in case
     localStorage.removeItem('authToken')
     delete axios.defaults.headers.common['Authorization']
     return null

@@ -119,16 +119,15 @@ const AiSuggestionBox = ({ onAddTask }) => {
         priority: suggestion.priority || 'medium',
         assignee: '', // User can edit this later
         dueDate: '', // User can set this later
-        totalMinutes: (suggestion.estimatedHours || 4) * 60 // Convert hours to minutes for backend
+        totalMinutes: (suggestion.estimatedHours || 4) * 60, // Convert hours to minutes for backend
       }
 
       await onAddTask(taskData)
-      
+
       // Optionally remove the suggestion from the list after adding
       if (suggestion.id) {
-        setSuggestions(prev => prev.filter(s => s.id !== suggestion.id))
+        setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id))
       }
-      
     } catch (error) {
       console.error('Failed to add task from AI suggestion:', error)
       setError('Failed to add task. Please try again.')
@@ -270,7 +269,7 @@ const AiSuggestionBox = ({ onAddTask }) => {
                       <span className="text-xs text-gray-500">
                         Est. {suggestion.estimatedHours}h
                       </span>
-                      <button 
+                      <button
                         onClick={() => handleAddTask(suggestion)}
                         className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors"
                       >

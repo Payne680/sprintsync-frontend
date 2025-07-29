@@ -56,7 +56,7 @@ const DroppableColumn = ({ children, id, title, color, count }) => {
 }
 
 // Sortable Task Item Component
-const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
+const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange, isUpdating }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -66,7 +66,7 @@ const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.5 : isUpdating ? 0.7 : 1,
     zIndex: isDragging ? 1000 : 'auto',
   }
 
@@ -89,7 +89,7 @@ const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
       style={style}
       className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow ${
         isDragging ? 'shadow-lg' : ''
-      }`}
+      } ${isUpdating ? 'ring-2 ring-blue-500 ring-opacity-30' : ''}`}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-start space-x-2 flex-1">
@@ -101,7 +101,12 @@ const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
             <GripVertical className="w-4 h-4 text-gray-400" />
           </div>
           <div className="flex-1">
-            <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+            <h4 className="font-medium text-gray-900 text-sm flex items-center">
+              {task.title}
+              {isUpdating && (
+                <div className="ml-2 animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+              )}
+            </h4>
           </div>
         </div>
         <div className="relative">
@@ -154,6 +159,12 @@ const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
           >
             {task.priority}
           </span>
+          {task.totalMinutes > 0 && (
+            <div className="flex items-center text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              <AlertCircle className="w-3 h-3 mr-1" />
+              <span>{Math.round(task.totalMinutes / 60)}h</span>
+            </div>
+          )}
           {task.assignee && (
             <div className="flex items-center text-gray-500">
               <User className="w-3 h-3 mr-1" />
@@ -172,10 +183,10 @@ const SortableTaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
   )
 }
 
-const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
+const TaskList = ({ tasks, onTaskUpdate, onTaskStatusChange, onEditTask, onDeleteTask }) => {
   const [loading, setLoading] = useState(false)
   const [activeTask, setActiveTask] = useState(null)
-  const [taskOrder, setTaskOrder] = useState(tasks)
+  const [updatingTasks, setUpdatingTasks] = useState(new Set()) // Track which tasks are being updated
 
   const statusColumns = {
     todo: { title: 'To Do', color: 'bg-gray-100 border-gray-300' },
@@ -186,13 +197,8 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
     done: { title: 'Done', color: 'bg-green-100 border-green-300' },
   }
 
-  // Update local task order when tasks prop changes
-  React.useEffect(() => {
-    setTaskOrder(tasks)
-  }, [tasks])
-
   // Group tasks by status
-  const tasksByStatus = taskOrder.reduce((acc, task) => {
+  const tasksByStatus = tasks.reduce((acc, task) => {
     if (!acc[task.status]) {
       acc[task.status] = []
     }
@@ -201,21 +207,30 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
   }, {})
 
   const handleStatusChange = async (taskId, newStatus) => {
-    setLoading(true)
+    console.log('TaskList: Changing task', taskId, 'status to', newStatus)
+    setUpdatingTasks((prev) => new Set(prev).add(taskId))
+    const originalTask = tasks.find((t) => t.id === taskId)
     try {
-      // Update local state immediately for optimistic UI
-      setTaskOrder((prevTasks) =>
-        prevTasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task))
-      )
-
-      // Call the parent's update handler instead of direct API call
-      await onTaskUpdate(taskId, { status: newStatus })
+      // Optimistically update UI via parent
+      if (onTaskStatusChange) {
+        await onTaskStatusChange(taskId, newStatus)
+      } else if (onTaskUpdate) {
+        await onTaskUpdate(taskId, { status: newStatus })
+      }
+      console.log('TaskList: Status change successful')
     } catch (error) {
-      console.error('Failed to update task:', error)
-      // Revert on error
-      setTaskOrder(tasks)
+      console.error('TaskList: Failed to update task status:', error)
+      // Optionally revert UI via parent
+      if (originalTask && onTaskUpdate) {
+        await onTaskUpdate(taskId, { status: originalTask.status })
+      }
+      alert('Failed to update task status. Please try again.')
     } finally {
-      setLoading(false)
+      setUpdatingTasks((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(taskId)
+        return newSet
+      })
     }
   }
 
@@ -246,48 +261,29 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
 
   const handleDragStart = (event) => {
     const { active } = event
-    const task = taskOrder.find((t) => t.id === active.id)
+    const task = tasks.find((t) => t.id === active.id)
     setActiveTask(task)
   }
 
-  const handleDragOver = (event) => {
-    const { active, over } = event
+  const handleDragOver = async (activeTaskId, overTaskId) => {
+    if (!activeTaskId) return
 
-    if (!over) return
-
-    const activeTaskId = active.id
-    const overTaskId = over.id
-
-    // If dropping on the same task, do nothing
-    if (activeTaskId === overTaskId) return
-
-    const activeTask = taskOrder.find((t) => t.id === activeTaskId)
-    const overTask = taskOrder.find((t) => t.id === overTaskId)
-
-    if (!activeTask) return
-
-    // Check if we're dropping on a column (droppable zone)
+    // Handle dropping on column
     if (typeof overTaskId === 'string' && overTaskId.startsWith('droppable-')) {
       const newStatus = overTaskId.replace('droppable-', '')
-
-      if (activeTask.status !== newStatus) {
-        setTaskOrder((prevTasks) =>
-          prevTasks.map((task) =>
-            task.id === activeTaskId ? { ...task, status: newStatus } : task
-          )
-        )
+      const activeTask = tasks.find((t) => t.id === activeTaskId)
+      if (activeTask && activeTask.status !== newStatus) {
+        await handleStatusChange(activeTaskId, newStatus)
       }
       return
     }
-
-    // If both tasks exist and are in different columns, move to the target column
-    if (overTask && activeTask.status !== overTask.status) {
-      setTaskOrder((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === activeTaskId ? { ...task, status: overTask.status } : task
-        )
-      )
+    // Handle reordering within same column or moving between columns
+    const overTask = tasks.find((t) => t.id === overTaskId)
+    const activeTask = tasks.find((t) => t.id === activeTaskId)
+    if (overTask && activeTask && activeTask.status !== overTask.status) {
+      await handleStatusChange(activeTaskId, overTask.status)
     }
+    // If you want to support reordering within a column, you can implement that in the parent
   }
 
   const handleDragEnd = async (event) => {
@@ -300,27 +296,27 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
     const activeTaskId = active.id
     const overTaskId = over.id
 
-    const activeTask = taskOrder.find((t) => t.id === activeTaskId)
+    const activeTask = tasks.find((t) => t.id === activeTaskId)
 
     if (!activeTask) return
 
-      // Handle dropping on column
-      if (typeof overTaskId === 'string' && overTaskId.startsWith('droppable-')) {
-        const newStatus = overTaskId.replace('droppable-', '')
+    // Handle dropping on column
+    if (typeof overTaskId === 'string' && overTaskId.startsWith('droppable-')) {
+      const newStatus = overTaskId.replace('droppable-', '')
 
-        if (activeTask.status !== newStatus) {
-          await handleStatusChange(activeTaskId, newStatus)
-        }
-        return
-      }    // Handle reordering within same column or moving between columns
-    const overTask = taskOrder.find((t) => t.id === overTaskId)
+      if (activeTask.status !== newStatus) {
+        await handleStatusChange(activeTaskId, newStatus)
+      }
+      return
+    } // Handle reordering within same column or moving between columns
+    const overTask = tasks.find((t) => t.id === overTaskId)
 
     if (overTask) {
-      const activeIndex = taskOrder.findIndex((t) => t.id === activeTaskId)
-      const overIndex = taskOrder.findIndex((t) => t.id === overTaskId)
+      const activeIndex = tasks.findIndex((t) => t.id === activeTaskId)
+      const overIndex = tasks.findIndex((t) => t.id === overTaskId)
 
       if (activeIndex !== overIndex) {
-        const newTaskOrder = arrayMove(taskOrder, activeIndex, overIndex)
+        const newTaskOrder = arrayMove(tasks, activeIndex, overIndex)
         setTaskOrder(newTaskOrder)
 
         // If moved to different column, update status
@@ -375,6 +371,7 @@ const TaskList = ({ tasks, onTaskUpdate, onEditTask, onDeleteTask }) => {
                       onEdit={onEditTask}
                       onDelete={handleDeleteTask}
                       onStatusChange={handleStatusChange}
+                      isUpdating={updatingTasks.has(task.id)}
                     />
                   ))}
                 </div>
