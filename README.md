@@ -1,5 +1,7 @@
 # SprintSync
 
+## [Video Link](https://www.loom.com/share/29bd5ab3356e4bb495b4159f97caece8?sid=1719f6a1-987e-4420-bcc9-255447f7a88f)
+
 SprintSync is a modern, AI-powered task management application designed for engineering teams and modern workflows. It combines a beautiful, responsive UI with real-time productivity features, authentication, and intelligent task suggestions.
 
 ---
