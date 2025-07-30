@@ -19,6 +19,10 @@ import {
 } from 'lucide-react'
 
 const Dashboard = () => {
+  const [showDemo, setShowDemo] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
   const { user, setUser } = useAuth()
 
   const [tasks, setTasks] = useState([])
@@ -172,6 +176,32 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Demo Modal */}
+      {showDemo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 relative animate-fade-in">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900"
+              onClick={() => setShowDemo(false)}
+            >
+              &times;
+            </button>
+            <h3 className="text-2xl font-bold mb-4">SprintSync Demo</h3>
+            <div className="aspect-w-16 aspect-h-9 mb-4">
+              <iframe
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                title="SprintSync Demo"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-64 rounded-lg border"
+              ></iframe>
+            </div>
+            <p className="text-gray-600">
+              See how SprintSync can supercharge your team’s productivity!
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="px-6 py-4">
@@ -179,7 +209,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
+                  <Zap className="w-5 h-5 text-white animate-bounce" />
                 </div>
                 <span className="text-xl font-bold text-gray-900">SprintSync</span>
               </div>
@@ -198,10 +228,13 @@ const Dashboard = () => {
 
             <div className="flex items-center space-x-4">
               <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-                <Bell className="w-5 h-5" />
+                <Bell className="w-5 h-5 animate-pulse" />
               </button>
               <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-                <Settings className="w-5 h-5" />
+                <Settings className="w-5 h-5 animate-spin-slow" />
+              </button>
+              <button className="btn-secondary text-sm px-4 py-2" onClick={() => setShowDemo(true)}>
+                Watch Demo
               </button>
               <div className="flex items-center space-x-3">
                 <div className="text-right">
@@ -227,7 +260,7 @@ const Dashboard = () => {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-80 bg-white border-r border-gray-200 min-h-screen">
+        <aside className="w-80 bg-white border-r border-gray-200 min-h-screen flex flex-col justify-between">
           <div className="p-6">
             <div className="space-y-6">
               {/* Stats */}
@@ -238,14 +271,14 @@ const Dashboard = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <div className="flex items-center space-x-2">
-                      <BarChart3 className="w-4 h-4 text-blue-600" />
+                      <BarChart3 className="w-4 h-4 text-blue-600 animate-bounce" />
                       <span className="text-sm font-medium text-gray-900">Total Tasks</span>
                     </div>
                     <span className="text-sm font-bold text-blue-600">{taskStats.total}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-yellow-600" />
+                      <Calendar className="w-4 h-4 text-yellow-600 animate-pulse" />
                       <span className="text-sm font-medium text-gray-900">In Progress</span>
                     </div>
                     <span className="text-sm font-bold text-yellow-600">
@@ -254,7 +287,7 @@ const Dashboard = () => {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                     <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-green-600" />
+                      <Users className="w-4 h-4 text-green-600 animate-spin-slow" />
                       <span className="text-sm font-medium text-gray-900">Completed</span>
                     </div>
                     <span className="text-sm font-bold text-green-600">{taskStats.done}</span>
@@ -264,15 +297,91 @@ const Dashboard = () => {
 
               {/* AI Suggestions */}
               <AiSuggestionBox onAddTask={handleAddTaskFromAI} />
+
+              {/* Try AI Suggestion Button */}
+              <div className="mt-6">
+                <button
+                  className="btn-secondary w-full flex items-center justify-center space-x-2"
+                  onClick={async () => {
+                    setAiLoading(true)
+                    setAiSuggestion('')
+                    setTimeout(() => {
+                      setAiSuggestion(
+                        'Try using labels to categorize tasks for better organization!'
+                      )
+                      setAiLoading(false)
+                    }, 1200)
+                  }}
+                >
+                  <span>Try AI Suggestion</span>
+                  <Zap className="w-5 h-5 text-purple-600 animate-pulse" />
+                </button>
+                {aiLoading && <div className="mt-3 text-purple-600 animate-pulse">Thinking...</div>}
+                {aiSuggestion && (
+                  <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 text-purple-800 animate-fade-in">
+                    <span className="font-semibold">AI Suggestion:</span> {aiSuggestion}
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+          {/* Sidebar Footer */}
+          <div className="px-6 pb-6">
+            <a
+              href="mailto:contact@sprintsync.com"
+              className="text-blue-600 hover:underline text-sm"
+            >
+              Contact Us
+            </a>
           </div>
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="max-w-6xl mx-auto">
-            {/* Page Header */}
+            {/* How It Works Collapsible (moved inside main content) */}
             <div className="mb-8">
+              <button
+                className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-lg px-6 py-4 text-left text-lg font-semibold text-gray-900 hover:bg-gray-50 transition mb-2"
+                onClick={() => setShowHowItWorks((v) => !v)}
+              >
+                <span>How it Works</span>
+                <span
+                  className={
+                    showHowItWorks ? 'rotate-90 transition-transform' : 'transition-transform'
+                  }
+                >
+                  ▶
+                </span>
+              </button>
+              {showHowItWorks && (
+                <div className="bg-white border border-gray-100 rounded-lg px-6 py-6 mb-4 animate-fade-in">
+                  <div className="grid md:grid-cols-3 gap-8">
+                    <div className="flex flex-col items-center">
+                      <Zap className="w-10 h-10 text-blue-600 animate-bounce mb-2" />
+                      <h3 className="text-lg font-semibold mb-1">1. Add Tasks</h3>
+                      <p className="text-gray-600 text-center">
+                        Quickly create and organize your team’s work.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <BarChart3 className="w-10 h-10 text-purple-600 animate-pulse mb-2" />
+                      <h3 className="text-lg font-semibold mb-1">2. Track Progress</h3>
+                      <p className="text-gray-600 text-center">
+                        Visualize status and keep everyone aligned.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <Settings className="w-10 h-10 text-green-600 animate-spin-slow mb-2" />
+                      <h3 className="text-lg font-semibold mb-1">3. Get AI Suggestions</h3>
+                      <p className="text-gray-600 text-center">
+                        Let AI help you optimize and deliver faster.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* Page Header */}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
@@ -302,7 +411,7 @@ const Dashboard = () => {
                 <div className="flex items-center space-x-2">
                   <Filter className="w-5 h-5 text-gray-400" />
                   <select
-                    className="input-field w-auto"
+                    className="select-field"
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
