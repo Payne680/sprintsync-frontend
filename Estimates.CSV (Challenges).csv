@@ -7,4 +7,4 @@ Frontend,Implement modal forms for create/edit task,2,3,3,Modal UI and validatio
 Frontend,Integrate /ai/suggest button and display response,1,2,1,AI suggestion button fetches and displays response
 Frontend,Deploy frontend to Vercel,1,1,1,Deployed and verified on Vercel
 Frontend,Write unit tests for React components and flows,3,4,1,Tested key flows and components with React Testing Library
-Testing & Docs,Write README,Loom video,and final testing,,
+Testing & Docs,Write README,Loom video,and final testing,,Documentation, video walkthrough, and final QA completed
