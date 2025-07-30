@@ -251,6 +251,7 @@ const Dashboard = () => {
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                 >
                   <LogOut className="w-5 h-5" />
+                  <span className="sr-only">Logout</span>
                 </button>
               </div>
             </div>

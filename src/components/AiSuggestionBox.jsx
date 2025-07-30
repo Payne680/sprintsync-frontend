@@ -220,7 +220,7 @@ const AiSuggestionBox = ({ onAddTask }) => {
       {suggestions.length === 0 && !loading && (
         <div className="text-center py-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-100">
           <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-gray-600 mb-3 p-2">
             Get AI-powered suggestions to optimize your workflow
           </p>
           <button
