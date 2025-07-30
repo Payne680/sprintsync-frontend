@@ -1,7 +1,7 @@
 Story,Task,Estimate min (hr),Estimate max (hr),Actual,Comment
 Planning,Create initial estimates.csv and project plan,1,1.5,,Drafting task breakdown and timeline
-Frontend,Setup React SPA with Vite and routing,2,3,3,Initial Vite setup, routing with React Router
-Frontend,Implement login flow with JWT,2,3,2,JWT auth integrated, tested login/logout
+Frontend,Setup React SPA with Vite and routing,2,3,3,Initial Vite setup routing with React Router
+Frontend,Implement login flow with JWT,2,3,2,JWT auth integrated tested login/logout
 Frontend,Implement task list view with inline status change,3,4,2,Drag-and-drop and inline status update working
 Frontend,Implement modal forms for create/edit task,2,3,3,Modal UI and validation complete
 Frontend,Integrate /ai/suggest button and display response,1,2,1,AI suggestion button fetches and displays response
