@@ -1,17 +1,31 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Landing from './pages/Landing'
+import Login from './pages/Login'
 import './styles.css'
+import Signup from './pages/Signup'
+import Dashboard from './pages/Dashboard'
+import { AuthProvider } from './hooks/useAuth'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          SprintSync
-        </h1>
-        <p className="text-lg text-gray-600">
-          Project setup complete! Ready for development.
-        </p>
-      </div>
-    </div>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </Router>
   )
 }
 
